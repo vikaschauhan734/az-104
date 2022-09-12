@@ -31,7 +31,7 @@ resource "azurerm_virtual_network" "myvnet" {
 
 #Azure Subnet
 resource "azurerm_subnet" "mysubnet1" {
-  name = "mysubnet-1"
+  name = "default"
   resource_group_name = azurerm_resource_group.myrg.name
   virtual_network_name = azurerm_virtual_network.myvnet.name
   address_prefixes = [ "10.0.1.0/24" ]
@@ -39,7 +39,7 @@ resource "azurerm_subnet" "mysubnet1" {
 
 #Azure Subnet
 resource "azurerm_subnet" "mysubnet2" {
-  name = "mysubnet-2"
+  name = "private"
   resource_group_name = azurerm_resource_group.myrg.name
   virtual_network_name = azurerm_virtual_network.myvnet.name
   address_prefixes = [ "10.0.2.0/24" ]
@@ -52,6 +52,7 @@ resource "azurerm_public_ip" "mypublicip1" {
   resource_group_name = azurerm_resource_group.myrg.name
   location = "Central India"
   allocation_method = "Static"
+  sku = "Standard"
 }
 
 #Public IP Address
@@ -72,7 +73,7 @@ resource "azurerm_network_interface" "myvmnic1" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.mysubnet1.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id = azurerm_public_ip.mypublicip1.id 
+    public_ip_address_id = null 
   }
 }
 
@@ -86,7 +87,7 @@ resource "azurerm_network_interface" "myvmnic2" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.mysubnet2.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id = azurerm_public_ip.mypublicip2.id 
+    public_ip_address_id = null 
   }
 }
 
@@ -114,7 +115,6 @@ resource "azurerm_linux_virtual_machine" "mylinuxvm1" {
     sku = "20_04-daily-lts"
     version = "latest"
   }
-  availability_set_id = azurerm_availability_set.myaset.id
 }
 
 #Azure Linux Virtual Machine
@@ -141,39 +141,4 @@ resource "azurerm_linux_virtual_machine" "mylinuxvm2" {
     sku = "20_04-daily-lts"
     version = "latest"
   }
-  availability_set_id = azurerm_availability_set.myaset.id
-}
-
-#Network Security Group
-resource "azurerm_network_security_group" "mynsg" {
-  name = "mynsg-01"
-  location = azurerm_resource_group.myrg.location
-  resource_group_name = azurerm_resource_group.myrg.name
-}
-
-#Network Security Rule
-resource "azurerm_network_security_rule" "mynsr" {
-  name = "allow_inbound_ssh"
-  priority = 100
-  direction = "Inbound"
-  access = "Allow"
-  protocol = "Tcp"
-  source_port_range = "*"
-  destination_port_range = "*"
-  source_address_prefix = "*"
-  destination_address_prefix = "*"
-  resource_group_name = azurerm_resource_group.myrg.name
-  network_security_group_name = azurerm_network_security_group.mynsg.name
-}
-
-#Associate Network Interface with NSG
-resource "azurerm_network_interface_security_group_association" "mynisga1" {
-  network_interface_id = azurerm_network_interface.myvmnic1.id
-  network_security_group_id = azurerm_network_security_group.mynsg.id
-}
-
-#Associate Network Interface with NSG
-resource "azurerm_network_interface_security_group_association" "mynisga2" {
-  network_interface_id = azurerm_network_interface.myvmnic2.id
-  network_security_group_id = azurerm_network_security_group.mynsg.id
 }
